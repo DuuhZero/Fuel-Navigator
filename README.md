@@ -1,6 +1,7 @@
 # Fuel Navigator
 
 ## Visão do Projeto
+O objetivo desse app é fornecer aos usuários informações precisas sobre o consumo, estimado de combustível em seus trajetos, assim como o gasto previsto de acordo com o valor informado do combustível, somado à gestão de dados pessoais e de veículos.
 
 ### Requisitos Funcionais <a name="requisitos"><a>
 
