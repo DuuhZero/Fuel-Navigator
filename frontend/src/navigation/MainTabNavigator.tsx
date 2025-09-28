@@ -15,14 +15,16 @@ export default function MainTabNavigator() {
     <Tab.Navigator
       screenOptions={{
         headerShown: true,
-        tabBarActiveTintColor: '#3B82F6',
-        tabBarInactiveTintColor: 'gray',
+        tabBarActiveTintColor: '#FF9B42',
+        tabBarInactiveTintColor: '#bbbbbb',
+        tabBarStyle: { backgroundColor: '#fff' },
       }}
     >
       <Tab.Screen
         name="Navegação"
         component={NavegacaoScreen}
         options={{
+          tabBarLabel: 'Navegação',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="navigate" size={size} color={color} />
           ),
@@ -32,11 +34,11 @@ export default function MainTabNavigator() {
         name="Veículos"
         component={VeiculosScreen}
         options={{
+          tabBarLabel: 'Veículos',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="car" size={size} color={color} />
           ),
         }}
-        
       />
       <Tab.Screen
         name="Histórico"

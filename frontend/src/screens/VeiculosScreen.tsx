@@ -2,19 +2,31 @@ import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, FlatList, Alert } from 'react-native';
 import { Text, Card, Button, FAB, ActivityIndicator } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
-import { useAuth } from '../contexts/AuthContext';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+
+type RootStackParamList = {
+  Veiculos: undefined;
+  EditarVeiculo: { veiculo: Veiculo };
+  AdicionarVeiculo: undefined;
+};
+
 import { Veiculo } from '../types';
 import api from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function VeiculosScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { usuario } = useAuth();
   const [veiculos, setVeiculos] = useState<Veiculo[]>([]);
   const [carregando, setCarregando] = useState(true);
 
   useEffect(() => {
-    carregarVeiculos();
-  }, []);
+    const unsubscribe = navigation.addListener('focus', () => {
+      carregarVeiculos();
+    });
+
+    return unsubscribe;
+  }, [navigation]);
 
   const carregarVeiculos = async () => {
     try {
@@ -51,11 +63,11 @@ export default function VeiculosScreen() {
   };
 
   const handleEditar = (veiculo: Veiculo) => {
-    navigation.navigate('EditarVeiculo' as never, { veiculo });
+    navigation.navigate('EditarVeiculo', { veiculo });
   };
-
   const handleAdicionar = () => {
-    navigation.navigate('AdicionarVeiculo' as never);
+
+    navigation.navigate('AdicionarVeiculo');
   };
 
   const renderVeiculo = ({ item }: { item: Veiculo }) => (
@@ -147,7 +159,7 @@ const styles = StyleSheet.create({
     margin: 16,
     right: 0,
     bottom: 0,
-    backgroundColor: '#abafe9ff',
+    backgroundColor: '#FF9B42',
 
   },
 });

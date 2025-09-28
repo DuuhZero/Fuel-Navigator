@@ -18,6 +18,14 @@ const HistoricoViagemSchema: Schema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'Rota'
   },
+  origem: {
+    type: String,
+    required: false
+  },
+  destino: {
+    type: String,
+    required: false
+  },
   dataViagem: {
     type: Date,
     default: Date.now

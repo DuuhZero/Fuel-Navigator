@@ -1,25 +1,51 @@
-import express from 'express';
-import { autenticar } from '../middleware/auth';
-import {
-  calcularRota,
-  listarRotas,
-  obterRota,
-  salvarRota,
-  atualizarRota,
-  excluirRota,
-  testarAPI
-} from '../controllers/rotaController';
+import mongoose, { Document, Schema } from 'mongoose';
+import { Rota as IRota } from '../types';
 
-const router = express.Router();
+export interface RotaDocument extends Omit<IRota, '_id'>, Document {}
 
-router.use(autenticar);
+const RotaSchema: Schema = new Schema({
+  usuarioId: {
+    type: Schema.Types.ObjectId,
+    ref: 'Usuario',
+    required: true
+  },
+  nome: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  origem: {
+    type: Object,
+    required: true
+  },
+  destino: {
+    type: Object,
+    required: true
+  },
+  origemEndereco: {
+    type: String,
+    required: true
+  },
+  destinoEndereco: {
+    type: String,
+    required: true
+  },
+  distancia: {
+    type: Number,
+    required: true
+  },
+  duracao: {
+    type: Number,
+    required: true
+  },
+  coordenadas: {
+    type: Array,
+    required: true
+  },
+  favorita: {
+    type: Boolean,
+    default: false
+  }
+});
 
-router.post('/calcular', calcularRota);
-router.post('/', salvarRota);
-router.get('/', listarRotas);
-router.get('/:id', obterRota);
-router.put('/:id', atualizarRota);
-router.delete('/:id', excluirRota);
-router.get('/teste/conexao', testarAPI); // Rota para testar a API
-
-export default router;
+export default mongoose.model<RotaDocument>('Rota', RotaSchema);
