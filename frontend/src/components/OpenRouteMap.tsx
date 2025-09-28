@@ -24,13 +24,16 @@ const OpenRouteMap: React.FC<OpenRouteMapProps> = ({
 
   if (!hasValidCoordinates) {
     return (
-      <View style={[styles.container, { height }]}>
-        <View style={styles.placeholder}>
-          <Text style={styles.placeholderText}>
+      <View style={[styles.container, { height }]}> 
+        <View style={styles.placeholder}> 
+          <Text style={styles.placeholderText}> 
             🗺️ Aguardando cálculo de rota...
           </Text>
-        </View>
-      </View>
+          <Text style={styles.subPlaceholderText}>
+            Insira origem e destino para visualizar o trajeto.
+          </Text>
+        </View> 
+      </View> 
     );
   }
 
@@ -159,6 +162,12 @@ const OpenRouteMap: React.FC<OpenRouteMapProps> = ({
 };
 
 const styles = StyleSheet.create({
+  subPlaceholderText: {
+    fontSize: 14,
+    color: '#FF9B42',
+    textAlign: 'center',
+    marginTop: 8,
+  },
   container: {
     flex: 1,
     width: '100%',

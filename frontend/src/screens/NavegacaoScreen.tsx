@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { View, StyleSheet, Alert, Dimensions, Animated, TouchableOpacity, ScrollView } from 'react-native';
 import { TextInput, Button, Text, Card, SegmentedButtons, ActivityIndicator, IconButton } from 'react-native-paper';
 import { useAuth } from '../contexts/AuthContext';
 import { Veiculo, Coordenada } from '../types';
 import api from '../services/api';
 import OpenRouteMap from '../components/OpenRouteMap';
-import * as Location from 'expo-location';
+import { useLocation } from '../hooks/useLocation';
 const { height } = Dimensions.get('window');
 
 interface CalculoRota {
@@ -19,6 +20,26 @@ interface CalculoRota {
 }
 
 const NavegacaoScreen: React.FC = () => {
+
+  const salvarRota = async () => {
+    if (!rota || !veiculoSelecionado) return;
+    try {
+      await api.post('/rotas', {
+        veiculoId: veiculoSelecionado._id,
+        distancia: rota.distancia,
+        duracao: rota.duracao,
+        consumoEstimado: rota.consumoEstimado,
+        custoEstimado: rota.custoEstimado,
+        precoCombustivel: precoCombustivel ? parseFloat(precoCombustivel) : undefined,
+        origem: rota.origem,
+        destino: rota.destino,
+        coordenadas: rota.coordenadas
+      });
+      Alert.alert('Sucesso', 'Rota salva para uso offline!');
+    } catch (error) {
+      Alert.alert('Erro', 'Falha ao salvar rota');
+    }
+  };
   useAuth();
   const [origem, setOrigem] = useState('');
   const [destino, setDestino] = useState('');
@@ -27,29 +48,31 @@ const NavegacaoScreen: React.FC = () => {
   const [veiculoSelecionado, setVeiculoSelecionado] = useState<Veiculo | null>(null);
   const [rota, setRota] = useState<CalculoRota | null>(null);
   const [carregando, setCarregando] = useState(false);
-  const [painelAberto, setPainelAberto] = useState(false);
   const [mostrarResultado, setMostrarResultado] = useState(false);
-  const slideAnim = useRef(new Animated.Value(0)).current;
   const resultadoAnim = useRef(new Animated.Value(0)).current;
-  const [localizacaoAtual, setLocalizacaoAtual] = useState<Coordenada | null>(null);
+  const [mostrarSeletorVeiculo, setMostrarSeletorVeiculo] = useState(false);
+  const { location } = useLocation();
   const [enderecoAtual, setEnderecoAtual] = useState('');
 
   useEffect(() => {
-    const inicializar = async () => {
-      await obterLocalizacaoAtual();
-      await carregarVeiculos();
-    };
-    inicializar();
-  }, []);
+    if (location) {
+      const { latitude, longitude } = location.coords;
+      setEnderecoAtual(`${latitude}, ${longitude}`);
+    }
+  }, [location]);
 
 
   useEffect(() => {
-    Animated.timing(slideAnim, {
-      toValue: painelAberto ? 1 : 0,
-      duration: 300,
-      useNativeDriver: true,
-    }).start();
-  }, [painelAberto]);
+    carregarVeiculos();
+  }, []);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      carregarVeiculos();
+    }, [])
+  );
+
+
 
   useEffect(() => {
     if (rota && rota.coordenadas && rota.coordenadas.length > 0) {
@@ -78,9 +101,7 @@ const NavegacaoScreen: React.FC = () => {
     }
   };
 
-  const togglePainel = () => {
-    setPainelAberto(!painelAberto);
-  };
+ 
 
   const fecharResultado = () => {
     Animated.timing(resultadoAnim, {
@@ -91,52 +112,13 @@ const NavegacaoScreen: React.FC = () => {
       setMostrarResultado(false);
     });
   };
+
   const obterLocalizacaoAtual = async () => {
-    try {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permissão negada', 'Permissão de localização é necessária');
-        return;
-      }
-
-      let location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High
-      });
+    if (location && location.coords) {
       const { latitude, longitude } = location.coords;
-
-      setLocalizacaoAtual({ latitude, longitude });
-
-      try {
-        // Geocodificar para obter endereço
-        let [address] = await Location.reverseGeocodeAsync({
-          latitude,
-          longitude
-        });
-
-        let enderecoFormatado = 'Sua localização atual';
-        if (address) {
-          const parts = [
-            address.street,
-            address.name,
-            address.district,
-            address.city,
-            address.region
-          ].filter(part => part && part.trim() !== '');
-
-          enderecoFormatado = parts.join(', ');
-        }
-
-        setEnderecoAtual(enderecoFormatado);
-        setOrigem(enderecoFormatado);
-
-      } catch (geocodeError) {
-        console.warn('Erro no geocoding reverso:', geocodeError);
-        setEnderecoAtual(`Localização: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
-        setOrigem(`Localização: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
-      }
-
-    } catch (error) {
-      console.error('Erro ao obter localização:', error);
+      setEnderecoAtual(`Localização: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+      setOrigem(`Localização: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+    } else {
       Alert.alert('Erro', 'Não foi possível obter a localização atual');
     }
   };
@@ -149,8 +131,13 @@ const NavegacaoScreen: React.FC = () => {
 
     setCarregando(true);
     try {
-      // Se não tem origem específica, usa a localização atual
-      const origemParaCalcular = origem || enderecoAtual;
+      let origemParaCalcular = origem && origem.trim() !== '' ? origem : enderecoAtual;
+      if (!origemParaCalcular || origemParaCalcular.trim() === '') {
+        if (location && location.coords) {
+          origemParaCalcular = `Localização: ${location.coords.latitude.toFixed(4)}, ${location.coords.longitude.toFixed(4)}`;
+          setOrigem(origemParaCalcular);
+        }
+      }
 
       const response = await api.post('/rotas/calcular', {
         origem: origemParaCalcular,
@@ -160,9 +147,27 @@ const NavegacaoScreen: React.FC = () => {
       });
 
       setRota(response.data);
-      togglePainel();
+      setMostrarResultado(true); 
+
+      try {
+        await api.post('/historico', {
+          veiculoId: veiculoSelecionado._id,
+          distancia: response.data.distancia,
+          duracao: response.data.duracao,
+          consumoEstimado: response.data.consumoEstimado,
+          custoEstimado: response.data.custoEstimado,
+          precoCombustivel: precoCombustivel ? parseFloat(precoCombustivel) : undefined,
+          origem: response.data.origem,
+          destino: response.data.destino,
+          coordenadas: response.data.coordenadas
+        });
+      } catch (err) {
+        Alert.alert('Atenção', 'Falha ao salvar histórico, mas a rota foi calculada. Você pode tentar salvar manualmente.');
+        setMostrarResultado(false);
+      }
 
     } catch (error: any) {
+      setMostrarResultado(false);
       Alert.alert('Erro', error.response?.data?.message || 'Falha ao calcular rota');
     } finally {
       setCarregando(false);
@@ -198,39 +203,95 @@ const NavegacaoScreen: React.FC = () => {
     setMostrarResultado(false);
   };
 
-  const painelTranslateY = slideAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [400, 0]
-  });
 
   const resultadoTranslateY = resultadoAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [-200, 0] // Agora vem de cima
+    outputRange: [-200, 0] 
   });
 
   return (
     <View style={styles.container}>
       {/* Mapa do OpenRoute Service */}
       <OpenRouteMap
-        coordenadas={rota?.coordenadas || (localizacaoAtual ? [localizacaoAtual] : [])}
+        coordenadas={rota?.coordenadas || (location ? [{ latitude: location.coords.latitude, longitude: location.coords.longitude }] : [])}
         origem={rota?.origem || enderecoAtual || 'Sua localização'}
         destino={rota?.destino || ''}
         altura={height}
       />
 
+      {/* Interface única de busca de rota */}
+      {!mostrarResultado && (
+        <View style={styles.menuBuscaContainer}>
+          <Text style={styles.tituloBusca}>Calcular rota</Text>
+          <TextInput
+            label="Origem"
+            value={origem}
+            onChangeText={setOrigem}
+            placeholder="Origem (deixe vazio para usar localização atual)"
+            style={styles.inputBusca}
+          />
+          <TextInput
+            label="Destino"
+            value={destino}
+            onChangeText={setDestino}
+            placeholder="Destino"
+            style={styles.inputBusca}
+          />
+          <TextInput
+            label="Preço do combustível (opcional)"
+            value={precoCombustivel}
+            onChangeText={setPrecoCombustivel}
+            keyboardType="numeric"
+            style={styles.inputBusca}
+            placeholder="Ex: 5.50"
+          />
+          {veiculos.length > 0 && (
+            <View style={styles.seletorVeiculoContainer}>
+              <Text style={styles.label}>Veículo</Text>
+              <Button
+                mode="outlined"
+                style={styles.seletorVeiculoBotao}
+                onPress={() => setMostrarSeletorVeiculo(true)}
+              >
+                {veiculoSelecionado ? `${veiculoSelecionado.marca} ${veiculoSelecionado.modelo}` : 'Selecionar veículo'}
+              </Button>
+              {/* Modal de seleção de veículo */}
+              {mostrarSeletorVeiculo && (
+                <View style={styles.modalSeletorVeiculo}>
+                  {veiculos.map((veiculo) => (
+                    <Button
+                      key={veiculo._id}
+                      mode={veiculoSelecionado?._id === veiculo._id ? 'contained' : 'outlined'}
+                      style={styles.seletorVeiculoItem}
+                      onPress={() => {
+                        setVeiculoSelecionado(veiculo);
+                        setMostrarSeletorVeiculo(false);
+                      }}
+                    >
+                      {veiculo.marca} {veiculo.modelo}
+                    </Button>
+                  ))}
+                  <Button mode="text" onPress={() => setMostrarSeletorVeiculo(false)} style={{ marginTop: 8 }}>Cancelar</Button>
+                </View>
+              )}
+            </View>
+          )}
+          <Button mode="contained" onPress={calcularRota} style={styles.botaoBusca} loading={carregando} disabled={carregando} icon="routes">
+            {carregando ? 'Calculando...' : 'Calcular Rota'}
+          </Button>
+        </View>
+      )}
+
       {/* Overlay de Resultados */}
       {mostrarResultado && rota && (
         <Animated.View
-          style={[
-            styles.resultadoOverlay,
-            { transform: [{ translateY: resultadoTranslateY }] }
-          ]}
+          style={[styles.resultadoOverlay, { transform: [{ translateY: resultadoTranslateY }] }]}
         >
           <Card style={styles.resultadoCard}>
             <Card.Content>
               <View style={styles.resultadoHeader}>
                 <Text variant="titleMedium" style={styles.tituloResultado}>
-                  📍 {rota.origem} → {rota.destino}
+                  📍 {rota.origem || '-'} → {rota.destino || '-'}
                 </Text>
                 <IconButton
                   icon="close"
@@ -243,20 +304,20 @@ const NavegacaoScreen: React.FC = () => {
               <View style={styles.infoContainer}>
                 <View style={styles.infoItem}>
                   <Text style={styles.infoLabel}>Distância</Text>
-                  <Text style={styles.infoValue}>{rota.distancia.toFixed(1)} km</Text>
+                  <Text style={styles.infoValue}>{typeof rota.distancia === 'number' ? rota.distancia.toFixed(1) : '-'} km</Text>
                 </View>
 
                 <View style={styles.infoItem}>
                   <Text style={styles.infoLabel}>Tempo</Text>
-                  <Text style={styles.infoValue}>{Math.round(rota.duracao)} min</Text>
+                  <Text style={styles.infoValue}>{typeof rota.duracao === 'number' ? Math.round(rota.duracao) : '-'} min</Text>
                 </View>
 
                 <View style={styles.infoItem}>
                   <Text style={styles.infoLabel}>Consumo</Text>
-                  <Text style={styles.infoValue}>{rota.consumoEstimado.toFixed(1)} L</Text>
+                  <Text style={styles.infoValue}>{typeof rota.consumoEstimado === 'number' ? rota.consumoEstimado.toFixed(1) : '-'} L</Text>
                 </View>
 
-                {rota.custoEstimado && (
+                {typeof rota.custoEstimado === 'number' && (
                   <View style={styles.infoItem}>
                     <Text style={styles.infoLabel}>Custo</Text>
                     <Text style={styles.infoValue}>R$ {rota.custoEstimado.toFixed(2)}</Text>
@@ -267,12 +328,12 @@ const NavegacaoScreen: React.FC = () => {
               <View style={styles.botoesContainer}>
                 <Button
                   mode="outlined"
-                  onPress={salvarHistorico}
+                  onPress={salvarRota}
                   style={styles.botaoResultado}
                   icon="content-save"
                   compact
                 >
-                  Salvar
+                  Salvar Rota
                 </Button>
                 <Button
                   mode="outlined"
@@ -293,101 +354,18 @@ const NavegacaoScreen: React.FC = () => {
                   Recarregar Mapa
                 </Button>
               </View>
+              <Button
+                mode="text"
+                style={{ marginTop: 16 }}
+                icon="chevron-up"
+                onPress={() => setMostrarResultado(false)}
+              >
+                Buscar nova rota
+              </Button>
             </Card.Content>
           </Card>
         </Animated.View>
       )}
-
-      {/* Painel deslizante */}
-      <Animated.View
-        style={[
-          styles.painelContainer,
-          { transform: [{ translateY: painelTranslateY }] }
-        ]}
-      >
-        {/* Toggle Button preso no topo do painel */}
-        <TouchableOpacity
-          style={styles.toggleButton}
-          onPress={togglePainel}
-          activeOpacity={0.8}
-        >
-          <View style={styles.toggleButtonContent}>
-            <IconButton
-              icon={painelAberto ? "chevron-down" : "routes"}
-              size={24}
-              iconColor="#FFF"
-              style={styles.toggleIcon}
-            />
-            <Text style={styles.toggleButtonText}>
-              {painelAberto ? 'Fechar Busca' : 'Calcular Rota'}
-            </Text>
-          </View>
-        </TouchableOpacity>
-
-        <ScrollView style={styles.painelContent}>
-          <Card style={styles.controlesCard}>
-            <Card.Content>
-              <Text variant="titleMedium" style={styles.tituloPainel}>
-                Calcular Rota
-              </Text>
-
-              <TextInput
-                label="Origem"
-                value={origem}
-                onChangeText={setOrigem}
-                style={styles.input}
-                mode="outlined"
-                placeholder="Ex: São Paulo, SP"
-              />
-
-              <TextInput
-                label="Destino"
-                value={destino}
-                onChangeText={setDestino}
-                style={styles.input}
-                mode="outlined"
-                placeholder="Ex: Campinas, SP"
-              />
-
-              <TextInput
-                label="Preço do combustível (opcional)"
-                value={precoCombustivel}
-                onChangeText={setPrecoCombustivel}
-                keyboardType="numeric"
-                style={styles.input}
-                mode="outlined"
-                placeholder="Ex: 5.50"
-              />
-
-              {veiculos.length > 0 && (
-                <>
-                  <Text style={styles.label}>Selecionar Veículo</Text>
-                  <SegmentedButtons
-                    value={veiculoSelecionado?._id || ''}
-                    onValueChange={(value: string) => setVeiculoSelecionado(veiculos.find(v => v._id === value) || null)}
-                    buttons={veiculos.map(veiculo => ({
-                      value: veiculo._id,
-                      label: `${veiculo.marca} ${veiculo.modelo}`
-                    }))}
-                    style={styles.segmented}
-                  />
-                </>
-              )}
-
-              <Button
-                mode="contained"
-                onPress={calcularRota}
-                style={styles.botao}
-                loading={carregando}
-                disabled={carregando}
-                icon="routes"
-              >
-                {carregando ? 'Calculando...' : 'Calcular Rota'}
-              </Button>
-            </Card.Content>
-          </Card>
-        </ScrollView>
-      </Animated.View>
 
       {carregando && (
         <View style={styles.overlay}>
@@ -400,6 +378,35 @@ const NavegacaoScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
+  menuBuscaContainer: {
+    backgroundColor: '#fff',
+    padding: 16,
+    borderRadius: 12,
+    margin: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tituloBusca: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#FF9B42',
+    marginBottom: 12,
+  },
+  inputBusca: {
+    width: '100%',
+    marginBottom: 12,
+    backgroundColor: '#fff',
+  },
+  botaoBusca: {
+    backgroundColor: '#FF9B42',
+    marginTop: 8,
+    width: '100%',
+  },
   container: {
     flex: 1,
     backgroundColor: '#fff',
@@ -502,50 +509,39 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
-  painelContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    elevation: 8,
-    zIndex: 15,
-    minHeight: 320,
-    maxHeight: height * 0.7,
-    overflow: 'hidden',
-  },
-  painelContent: {
-    padding: 16,
-    paddingTop: 40, // Espaço para o toggle button
-    maxHeight: height * 0.7,
-  },
-  controlesCard: {
-    borderRadius: 16,
-    elevation: 2,
-    padding: 8,
-    marginTop: 10,
-  },
-  tituloPainel: {
-    fontWeight: 'bold',
-    fontSize: 18,
-    marginBottom: 12,
-  },
-  input: {
-    marginBottom: 12,
-  },
   label: {
     fontSize: 14,
     fontWeight: 'bold',
     marginBottom: 4,
     color: '#222',
   },
-  segmented: {
-    marginBottom: 16,
-  },
-  botao: {
+  seletorVeiculoContainer: {
     marginTop: 8,
+    marginBottom: 8,
+    alignItems: 'center',
+  },
+  seletorVeiculoBotao: {
+    width: '100%',
+    marginBottom: 4,
+    alignSelf: 'stretch',
+    minWidth: '100%',
+    maxWidth: '100%',
+  },
+  modalSeletorVeiculo: {
+    position: 'absolute',
+    top: 40,
+    left: 0,
+    right: 0,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    elevation: 8,
+    zIndex: 100,
+    padding: 12,
+    alignItems: 'center',
+  },
+  seletorVeiculoItem: {
+    width: '100%',
+    marginBottom: 4,
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,

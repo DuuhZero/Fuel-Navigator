@@ -4,7 +4,12 @@ import { AuthRequest } from '../middleware/auth';
 
 export const criarHistorico = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const historicoData = { ...req.body, usuarioId: req.usuario._id };
+    const historicoData = {
+      ...req.body,
+      usuarioId: req.usuario._id,
+      origem: req.body.origem,
+      destino: req.body.destino
+    };
     const historico = new HistoricoViagem(historicoData);
     await historico.save();
     res.status(201).json(historico);
@@ -15,12 +20,11 @@ export const criarHistorico = async (req: AuthRequest, res: Response): Promise<v
 
 export const listarHistorico = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const historico = await HistoricoViagem.find({ usuarioId: req.usuario._id })
-      .populate('veiculoId')
-      .populate('rotaId')
+    const historicos = await HistoricoViagem.find({ usuarioId: req.usuario._id })
+      .populate('veiculoId', 'marca modelo placa')
+      .populate('rotaId', 'origem destino origemEndereco destinoEndereco distancia duracao')
       .sort({ dataViagem: -1 });
-    
-    res.json(historico);
+    res.json(historicos);
   } catch (error) {
     res.status(500).json({ message: 'Erro ao listar histórico' });
   }

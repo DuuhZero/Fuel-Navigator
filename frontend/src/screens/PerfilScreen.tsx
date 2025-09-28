@@ -3,10 +3,15 @@ import { View, StyleSheet } from 'react-native';
 import { Text, Button } from 'react-native-paper';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+
+type RootStackParamList = {
+  Login: undefined;
+};
 
 export default function PerfilScreen() {
   const { usuario, logout } = useAuth();
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const handleLogout = () => {
     logout();
@@ -14,7 +19,7 @@ export default function PerfilScreen() {
   }
   return (
     <View style={styles.container}>
-      <Text variant="headlineMedium">Perfil do Usuário</Text>
+  <Text variant="headlineMedium" style={styles.titulo}>Perfil do Usuário</Text>
       
       {usuario && (
         <View style={styles.infoContainer}>
@@ -43,6 +48,11 @@ export default function PerfilScreen() {
 }
 
 const styles = StyleSheet.create({
+  titulo: {
+    color: '#FF9B42',
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
   container: {
     flex: 1,
     padding: 16,

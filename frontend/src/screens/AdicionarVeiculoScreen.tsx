@@ -40,7 +40,6 @@ export default function AdicionarVeiculoScreen() {
         consumoMedio: parseFloat(formData.consumoMedio),
         capacidadeTanque: formData.capacidadeTanque ? parseFloat(formData.capacidadeTanque) : undefined
       });
-
       Alert.alert('Sucesso', 'Veículo adicionado com sucesso!');
       navigation.goBack();
     } catch (error: any) {

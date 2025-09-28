@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 8,
-    color: '#3B82F6',
+    color: '#FF9B42',
   },
   subtitulo: {
     textAlign: 'center',

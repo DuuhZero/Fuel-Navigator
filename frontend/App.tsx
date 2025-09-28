@@ -1,13 +1,13 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { Provider as PaperProvider } from 'react-native-paper';
+import { PaperProvider } from 'react-native-paper';
+import { customTheme } from './src/theme/theme';
 import { AuthProvider } from './src/contexts/AuthContext';
 import { ThemeProvider } from './src/contexts/ThemeContext';
 import AdicionarVeiculoScreen from './src/screens/AdicionarVeiculoScreen';
 import EditarVeiculoScreen from './src/screens/EditarVeiculoScreen';
 
-// Screens
 import LoginScreen from './src/screens/LoginScreen';
 import RegistroScreen from './src/screens/RegistroScreen';
 import MainTabNavigator from './src/navigation/MainTabNavigator';
@@ -18,7 +18,7 @@ export default function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <PaperProvider>
+        <PaperProvider theme={customTheme}>
           <NavigationContainer>
             <Stack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false }}>
               <Stack.Screen name="Login" component={LoginScreen} />

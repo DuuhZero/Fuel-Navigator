@@ -4,6 +4,8 @@ import { OpenRouteService } from '../services/openRouteService';
 import Veiculo from '../models/Veiculo';
 import { Coordenada } from '../types';
 import polyline from 'polyline';
+import HistoricoViagem from '../models/HistoricoViagem';
+import Rota from '../models/Rota'; 
 
 export const calcularRota = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
@@ -96,42 +98,48 @@ export const calcularRota = async (req: AuthRequest, res: Response): Promise<voi
 
    
     let coordenadas: Coordenada[] = [];
-
     if (geometry && typeof geometry === 'string') {
       console.log('🔄 Decodificando polyline...');
       try {
-
         const decoded: number[][] = polyline.decode(geometry);
         console.log(`✅ ${decoded.length} pontos decodificados`);
-
-
-        coordenadas = decoded.map((coord: number[]) => {
-          if (coord.length >= 2) {
-            return {
-              latitude: coord[0],
-              longitude: coord[1]
-            };
-          } else {
-            console.warn('⚠️ Coordenada inválida:', coord);
-            return { latitude: 0, longitude: 0 }; 
-          }
-        }).filter(coord => coord.latitude !== 0 && coord.longitude !== 0);
-
-        console.log('📍 Primeiras coordenadas decodificadas:', coordenadas.slice(0, 3));
-
+        coordenadas = decoded.map((coord: number[]) => ({ latitude: coord[0], longitude: coord[1] }));
       } catch (decodeError) {
         console.error('❌ Erro ao decodificar polyline:', decodeError);
       }
     } else {
       console.warn('⚠️ Geometry não é uma string (polyline)');
     }
+
+    const origemEndereco = featuresOrigem[0].properties.label;
+    const destinoEndereco = featuresDestino[0].properties.label;
+
     const consumoEstimado = distancia / veiculo.consumoMedio;
     let custoEstimado = undefined;
-
     if (precoCombustivel) {
       custoEstimado = consumoEstimado * precoCombustivel;
     }
 
+
+    await HistoricoViagem.create({
+      usuarioId: req.usuario._id,
+      veiculoId: req.body.veiculoId,
+      origem: req.body.origem, 
+      destino: req.body.destino, 
+      consumoEstimado,
+      custoEstimado,
+      precoCombustivel,
+      distancia,
+      duracao,
+      dadosRota: {
+        coordenadas,
+        origemEndereco,
+        destinoEndereco
+      },
+      origemEndereco,
+      destinoEndereco,
+      dataViagem: new Date()
+    });
 
     console.log('📊 Resultado final:', {
       distancia: `${distancia.toFixed(1)} km`,
@@ -141,13 +149,17 @@ export const calcularRota = async (req: AuthRequest, res: Response): Promise<voi
     });
 
     res.json({
-      distancia,
-      duracao,
+      sucesso: true,
+      rota: {
+        coordenadas,
+        origemEndereco,
+        destinoEndereco,
+        distancia,
+        duracao
+      },
       consumoEstimado,
       custoEstimado,
-      coordenadas,
-      origem: featuresOrigem[0].properties.label,
-      destino: featuresDestino[0].properties.label
+      precoCombustivel
     });
 
   } catch (error) {
@@ -175,6 +187,22 @@ export const obterRota = async (req: AuthRequest, res: Response): Promise<void> 
 
 export const salvarRota = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
+    const rotaData = { ...req.body, usuarioId: req.usuario._id };
+    const rota = await Rota.create(rotaData);
+
+    const historicoData = {
+      usuarioId: req.usuario._id,
+      veiculoId: req.body.veiculoId,
+      rotaId: rota._id,
+      consumoEstimado: req.body.consumoEstimado,
+      custoEstimado: req.body.custoEstimado,
+      distancia: req.body.distancia,
+      duracao: req.body.duracao,
+      dadosRota: req.body.coordenadas
+    };
+    
+    const historico = new HistoricoViagem(historicoData);
+    await historico.save();
     res.json({ message: 'Rota salva - funcionalidade em desenvolvimento' });
   } catch (error) {
     res.status(500).json({ message: 'Erro ao salvar rota' });
