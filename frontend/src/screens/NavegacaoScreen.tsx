@@ -21,6 +21,22 @@ interface CalculoRota {
 }
 
 const NavegacaoScreen: React.FC = () => {
+  // Helpers de formatação para manter consistência entre cálculo e lista de salvas
+  const formatKm = (km?: number) => {
+    if (km == null || isNaN(km as number)) return '-';
+    const v = km as number;
+    if (v >= 100) return `${v.toFixed(0)} km`;
+    if (v >= 10) return `${v.toFixed(1)} km`;
+    return `${v.toFixed(2)} km`;
+  };
+
+  const formatDuration = (min?: number) => {
+    if (min == null || isNaN(min as number)) return '-';
+    const total = Math.round(min as number);
+    const h = Math.floor(total / 60);
+    const m = total % 60;
+    return h > 0 ? `${h} h ${m} min` : `${m} min`;
+  };
 
   const salvarRota = async () => {
     if (!rota || !veiculoSelecionado) return;
@@ -320,8 +336,8 @@ const NavegacaoScreen: React.FC = () => {
               <Card key={index} style={{ marginBottom: 12 }}>
                 <Card.Content>
                   <Text variant="titleMedium">{rotaSalva.origem} → {rotaSalva.destino}</Text>
-                  <Text variant="bodyMedium">Distância: {(rotaSalva.distancia / 1000).toFixed(1)} km</Text>
-                  <Text variant="bodyMedium">Duração: {Math.round(rotaSalva.duracao / 60)} min</Text>
+                  <Text variant="bodyMedium">Distância: {formatKm(rotaSalva.distancia)}</Text>
+                  <Text variant="bodyMedium">Duração: {formatDuration(rotaSalva.duracao)}</Text>
                 </Card.Content>
                 <Card.Actions>
                   <Button onPress={() => usarRotaSalva(rotaSalva)}>Usar</Button>
