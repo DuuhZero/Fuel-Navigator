@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { View, StyleSheet, Alert, Dimensions, Animated, TouchableOpacity, ScrollView } from 'react-native';
+import { View, StyleSheet, Alert, Dimensions, Animated, TouchableOpacity, ScrollView, Modal } from 'react-native';
 import { TextInput, Button, Text, Card, SegmentedButtons, ActivityIndicator, IconButton } from 'react-native-paper';
 import { useAuth } from '../contexts/AuthContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Veiculo, Coordenada } from '../types';
 import api from '../services/api';
 import OpenRouteMap from '../components/OpenRouteMap';
@@ -24,6 +25,7 @@ const NavegacaoScreen: React.FC = () => {
   const salvarRota = async () => {
     if (!rota || !veiculoSelecionado) return;
     try {
+      // Salva no backend
       await api.post('/rotas', {
         veiculoId: veiculoSelecionado._id,
         distancia: rota.distancia,
@@ -35,18 +37,71 @@ const NavegacaoScreen: React.FC = () => {
         destino: rota.destino,
         coordenadas: rota.coordenadas
       });
+
+      // Salva localmente
+      const rotasSalvasString = await AsyncStorage.getItem('@saved_routes');
+      let rotas = [];
+      if (rotasSalvasString) {
+        rotas = JSON.parse(rotasSalvasString);
+      }
+      rotas.push(rota);
+      await AsyncStorage.setItem('@saved_routes', JSON.stringify(rotas));
+      setRotasSalvas(rotas);
+      
       Alert.alert('Sucesso', 'Rota salva para uso offline!');
     } catch (error) {
+      console.error('Erro ao salvar rota:', error);
       Alert.alert('Erro', 'Falha ao salvar rota');
     }
   };
   useAuth();
+
+  // Carrega rotas salvas quando a tela recebe foco
+  useFocusEffect(
+    React.useCallback(() => {
+      carregarRotasSalvas();
+    }, [])
+  );
   const [origem, setOrigem] = useState('');
   const [destino, setDestino] = useState('');
   const [precoCombustivel, setPrecoCombustivel] = useState('');
   const [veiculos, setVeiculos] = useState<Veiculo[]>([]);
   const [veiculoSelecionado, setVeiculoSelecionado] = useState<Veiculo | null>(null);
   const [rota, setRota] = useState<CalculoRota | null>(null);
+  const [rotasSalvas, setRotasSalvas] = useState<CalculoRota[]>([]);
+  const [modalRotasVisible, setModalRotasVisible] = useState(false);
+
+  const carregarRotasSalvas = async () => {
+    try {
+      const rotasSalvasString = await AsyncStorage.getItem('@saved_routes');
+      if (rotasSalvasString) {
+        const rotas = JSON.parse(rotasSalvasString);
+        setRotasSalvas(rotas);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar rotas salvas:', error);
+    }
+  };
+
+  const usarRotaSalva = (rotaSalva: CalculoRota) => {
+    setRota(rotaSalva);
+    setOrigem(rotaSalva.origem);
+    setDestino(rotaSalva.destino);
+    setModalRotasVisible(false);
+  };
+
+  const excluirRotaSalva = async (index: number) => {
+    try {
+      const novasRotas = [...rotasSalvas];
+      novasRotas.splice(index, 1);
+      await AsyncStorage.setItem('@saved_routes', JSON.stringify(novasRotas));
+      setRotasSalvas(novasRotas);
+      Alert.alert('Sucesso', 'Rota excluída');
+    } catch (error) {
+      console.error('Erro ao excluir rota:', error);
+      Alert.alert('Erro', 'Falha ao excluir rota');
+    }
+  };
   const [carregando, setCarregando] = useState(false);
   const [mostrarResultado, setMostrarResultado] = useState(false);
   const resultadoAnim = useRef(new Animated.Value(0)).current;
@@ -139,34 +194,63 @@ const NavegacaoScreen: React.FC = () => {
         }
       }
 
-      const response = await api.post('/rotas/calcular', {
-        origem: origemParaCalcular,
-        destino,
-        veiculoId: veiculoSelecionado._id,
-        precoCombustivel: precoCombustivel ? parseFloat(precoCombustivel) : undefined
-      });
+      // Primeiro checa se existe uma rota salva localmente
+      const saved = await AsyncStorage.getItem('@saved_routes');
+      const savedRoutes = saved ? JSON.parse(saved) : [];
+      const normalize = (s: string) => (s || '').toLowerCase().trim();
+      const found = savedRoutes.find((r: any) => normalize(r.origem) === normalize(origemParaCalcular) && normalize(r.destino) === normalize(destino));
 
-      setRota(response.data);
-      setMostrarResultado(true); 
-
-      try {
-        await api.post('/historico', {
+      if (found) {
+        // Usa rota salva localmente sem consultar API
+        setRota(found);
+        setMostrarResultado(true);
+      } else {
+        const response = await api.post('/rotas/calcular', {
+          origem: origemParaCalcular,
+          destino,
           veiculoId: veiculoSelecionado._id,
-          distancia: response.data.distancia,
-          duracao: response.data.duracao,
-          consumoEstimado: response.data.consumoEstimado,
-          custoEstimado: response.data.custoEstimado,
-          precoCombustivel: precoCombustivel ? parseFloat(precoCombustivel) : undefined,
-          origem: response.data.origem,
-          destino: response.data.destino,
-          coordenadas: response.data.coordenadas
+          precoCombustivel: precoCombustivel ? parseFloat(precoCombustivel) : undefined
         });
-      } catch (err) {
-        Alert.alert('Atenção', 'Falha ao salvar histórico, mas a rota foi calculada. Você pode tentar salvar manualmente.');
-        setMostrarResultado(false);
+
+        setRota(response.data);
+        setMostrarResultado(true);
+
+        // salva localmente para uso offline (mantém cópia simples)
+        try {
+          const toSave = {
+            origem: response.data.origem,
+            destino: response.data.destino,
+            distancia: response.data.distancia,
+            duracao: response.data.duracao,
+            consumoEstimado: response.data.consumoEstimado,
+            coordenadas: response.data.coordenadas
+          };
+          const updated = [...savedRoutes.filter((r: any) => !(normalize(r.origem) === normalize(toSave.origem) && normalize(r.destino) === normalize(toSave.destino))), toSave];
+          await AsyncStorage.setItem('@saved_routes', JSON.stringify(updated));
+        } catch (err) {
+          // não bloqueia fluxo
+          console.warn('Falha ao salvar rota localmente', err);
+        }
+
+        try {
+          await api.post('/historico', {
+            veiculoId: veiculoSelecionado._id,
+            distancia: response.data.distancia,
+            duracao: response.data.duracao,
+            consumoEstimado: response.data.consumoEstimado,
+            custoEstimado: response.data.custoEstimado,
+            precoCombustivel: precoCombustivel ? parseFloat(precoCombustivel) : undefined,
+            origem: response.data.origem,
+            destino: response.data.destino,
+            coordenadas: response.data.coordenadas
+          });
+        } catch (err) {
+          // Erro ao salvar histórico é ignorado, sem alerta
+        }
       }
 
     } catch (error: any) {
+      // Só fecha o overlay se não foi possível calcular a rota
       setMostrarResultado(false);
       Alert.alert('Erro', error.response?.data?.message || 'Falha ao calcular rota');
     } finally {
@@ -219,15 +303,58 @@ const NavegacaoScreen: React.FC = () => {
         altura={height}
       />
 
+      {/* Modal de rotas salvas */}
+      <Modal
+        visible={modalRotasVisible}
+        onRequestClose={() => setModalRotasVisible(false)}
+        animationType="slide"
+      >
+        <View style={{ flex: 1, padding: 16, backgroundColor: '#fff' }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <Text variant="titleLarge">Rotas Salvas</Text>
+            <IconButton icon="close" onPress={() => setModalRotasVisible(false)} />
+          </View>
+
+          <ScrollView>
+            {rotasSalvas.map((rotaSalva, index) => (
+              <Card key={index} style={{ marginBottom: 12 }}>
+                <Card.Content>
+                  <Text variant="titleMedium">{rotaSalva.origem} → {rotaSalva.destino}</Text>
+                  <Text variant="bodyMedium">Distância: {(rotaSalva.distancia / 1000).toFixed(1)} km</Text>
+                  <Text variant="bodyMedium">Duração: {Math.round(rotaSalva.duracao / 60)} min</Text>
+                </Card.Content>
+                <Card.Actions>
+                  <Button onPress={() => usarRotaSalva(rotaSalva)}>Usar</Button>
+                  <Button onPress={() => excluirRotaSalva(index)}>Excluir</Button>
+                </Card.Actions>
+              </Card>
+            ))}
+            {rotasSalvas.length === 0 && (
+              <Text style={{ textAlign: 'center', marginTop: 20, color: '#666' }}>
+                Nenhuma rota salva
+              </Text>
+            )}
+          </ScrollView>
+        </View>
+      </Modal>
+
       {/* Interface única de busca de rota */}
       {!mostrarResultado && (
         <View style={styles.menuBuscaContainer}>
-          <Text style={styles.tituloBusca}>Calcular rota</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+            <Text style={[styles.tituloBusca, { flex: 1 }]}>Calcular rota</Text>
+            <IconButton 
+              icon="history" 
+              onPress={() => setModalRotasVisible(true)} 
+              mode="contained"
+              size={20}
+            />
+          </View>
           <TextInput
             label="Origem"
             value={origem}
             onChangeText={setOrigem}
-            placeholder="Origem (deixe vazio para usar localização atual)"
+            placeholder="Origem "
             style={styles.inputBusca}
           />
           <TextInput
@@ -414,11 +541,10 @@ const styles = StyleSheet.create({
 
   resultadoOverlay: {
     position: 'absolute',
-    top: 10,
-    left: 10,
-    right: 10,
+    top: '0%',
+    right: 1,
     zIndex: 1000,
-    borderRadius: 16,
+    borderRadius: 15,
     backgroundColor: 'white',
     elevation: 10,
     shadowColor: '#000',

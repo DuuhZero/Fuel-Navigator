@@ -7,6 +7,7 @@ import NavegacaoScreen from '../screens/NavegacaoScreen';
 import VeiculosScreen from '../screens/VeiculosScreen';
 import HistoricoScreen from '../screens/HistoricoScreen';
 import PerfilScreen from '../screens/PerfilScreen';
+import RelatoriosScreen from '../screens/RelatoriosScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -55,6 +56,15 @@ export default function MainTabNavigator() {
         options={{
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="person" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Relatórios"
+        component={RelatoriosScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="document-text" size={size} color={color} />
           ),
         }}
       />

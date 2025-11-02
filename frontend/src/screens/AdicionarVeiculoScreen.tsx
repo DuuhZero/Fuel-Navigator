@@ -27,8 +27,9 @@ export default function AdicionarVeiculoScreen() {
   };
 
   const handleSubmit = async () => {
-    if (!formData.marca || !formData.modelo || !formData.ano || !formData.consumoMedio) {
-      Alert.alert('Erro', 'Preencha os campos obrigatórios: marca, modelo, ano e consumo médio');
+    // marca e ano agora são opcionais; exigir somente modelo e consumo médio
+    if (!formData.modelo || !formData.consumoMedio) {
+      Alert.alert('Erro', 'Preencha os campos obrigatórios: modelo e consumo médio');
       return;
     }
 
@@ -56,7 +57,7 @@ export default function AdicionarVeiculoScreen() {
           <Text variant="titleLarge" style={styles.titulo}>Adicionar Veículo</Text>
 
           <TextInput
-            label="Marca *"
+            label="Marca "
             value={formData.marca}
             onChangeText={(value) => handleChange('marca', value)}
             style={styles.input}
@@ -72,7 +73,7 @@ export default function AdicionarVeiculoScreen() {
           />
 
           <TextInput
-            label="Ano *"
+            label="Ano "
             value={formData.ano}
             onChangeText={(value) => handleChange('ano', value)}
             keyboardType="numeric"

@@ -33,8 +33,9 @@ export default function EditarVeiculoScreen() {
   };
 
   const handleSubmit = async () => {
-    if (!formData.marca || !formData.modelo || !formData.ano || !formData.consumoMedio) {
-      Alert.alert('Erro', 'Preencha os campos obrigatórios: marca, modelo, ano e consumo médio');
+    // marca e ano agora são opcionais; exigir somente modelo e consumo médio
+    if (!formData.modelo || !formData.consumoMedio) {
+      Alert.alert('Erro', 'Preencha os campos obrigatórios: modelo e consumo médio');
       return;
     }
 
@@ -63,7 +64,7 @@ export default function EditarVeiculoScreen() {
           <Text variant="titleLarge" style={styles.titulo}>Editar Veículo</Text>
 
           <TextInput
-            label="Marca *"
+            label="Marca"
             value={formData.marca}
             onChangeText={(value) => handleChange('marca', value)}
             style={styles.input}
@@ -79,7 +80,7 @@ export default function EditarVeiculoScreen() {
           />
 
           <TextInput
-            label="Ano *"
+            label="Ano"
             value={formData.ano}
             onChangeText={(value) => handleChange('ano', value)}
             keyboardType="numeric"

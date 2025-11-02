@@ -8,9 +8,12 @@ import {
 
 const router = express.Router();
 
+// Permitir download via navegador com token na query (sem header Authorization)
+router.get('/pdf', gerarRelatorioPDF);
+
+// Demais rotas exigem autenticação via header
 router.use(autenticar);
 
-router.get('/pdf', gerarRelatorioPDF);
 router.get('/mensal', gerarRelatorioMensal);
 router.get('/semanal', gerarRelatorioSemanal);
 

@@ -3,9 +3,10 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { View, StyleSheet, FlatList } from 'react-native';
+import { View, StyleSheet, FlatList, Alert } from 'react-native';
 import { Text, Card, ActivityIndicator } from 'react-native-paper';
 import api from '../services/api';
+import { Veiculo } from '../types';
 
 interface HistoricoViagem {
   _id: string;
@@ -38,6 +39,23 @@ export default function HistoricoScreen() {
   const [historico, setHistorico] = useState<HistoricoViagem[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [enderecos, setEnderecos] = useState<Record<string, { origem: string; destino: string }>>({});
+  const [veiculosMap, setVeiculosMap] = useState<Record<string, Pick<Veiculo, 'marca' | 'modelo' | 'placa'>>>({});
+
+  const carregarVeiculos = async () => {
+    try {
+      const resp = await api.get('/veiculos');
+      const lista: Veiculo[] = resp.data || [];
+      const map: Record<string, Pick<Veiculo, 'marca' | 'modelo' | 'placa'>> = {};
+      lista.forEach(v => {
+        if ((v as any)._id) {
+          map[(v as any)._id] = { marca: v.marca, modelo: v.modelo, placa: v.placa };
+        }
+      });
+      setVeiculosMap(map);
+    } catch (e) {
+      // silencioso: se falhar, apenas não enriquece a exibição
+    }
+  };
 
   const fetchHistorico = async () => {
     setCarregando(true);
@@ -70,19 +88,26 @@ export default function HistoricoScreen() {
         novoEnderecos[e.id] = { origem: e.origem, destino: e.destino };
       });
       setEnderecos(novoEnderecos);
-    } catch (error) {
-      setHistorico([]);
+    } catch (error: any) {
+      console.error('Erro ao buscar histórico:', {
+        status: error?.response?.status,
+        data: error?.response?.data,
+        message: error?.message,
+      });
+      Alert.alert('Erro', error?.response?.data?.message || 'Falha ao carregar histórico');
     } finally {
       setCarregando(false);
     }
   };
 
   useEffect(() => {
+    carregarVeiculos();
     fetchHistorico();
   }, []);
 
   useFocusEffect(
     React.useCallback(() => {
+      carregarVeiculos();
       fetchHistorico();
     }, [])
   );
@@ -98,18 +123,34 @@ export default function HistoricoScreen() {
     // Preferir endereços geocodificados, se existirem
     const origemEndereco = item.origemEndereco || item.dadosRota?.origemEndereco || item.origem || '-';
     const destinoEndereco = item.destinoEndereco || item.dadosRota?.destinoEndereco || item.destino || '-';
+
+    // Resolver infos do veículo: usar populate, senão buscar no mapa por id
+    let veiculoTexto = 'Veículo';
+    const veiculoField: any = (item as any).veiculoId;
+    if (veiculoField && typeof veiculoField === 'object' && ('marca' in veiculoField || 'modelo' in veiculoField)) {
+      const marca = veiculoField.marca || '';
+      const modelo = veiculoField.modelo || '';
+      const placa = veiculoField.placa ? `(${veiculoField.placa})` : '';
+      veiculoTexto = `${marca || 'Veículo'} ${modelo || ''} ${placa}`.trim();
+    } else if (veiculoField && typeof veiculoField === 'string') {
+      const v = veiculosMap[veiculoField];
+      if (v) {
+        const placa = v.placa ? `(${v.placa})` : '';
+        veiculoTexto = `${v.marca || 'Veículo'} ${v.modelo || ''} ${placa}`.trim();
+      }
+    }
     return (
       <Card style={styles.card}>
         <Card.Content>
           <Text style={styles.tituloCard}>📍 {origemEndereco} → {destinoEndereco}</Text>
-          <Text style={styles.info}>Veículo: {item.veiculoId?.marca || 'Veículo'} {item.veiculoId?.modelo || ''} {item.veiculoId?.placa ? `(${item.veiculoId.placa})` : ''}</Text>
+          <Text style={styles.info}>Veículo: {veiculoTexto}</Text>
           <Text style={styles.info}>Distância: {distancia ? distancia.toFixed(1) : '-'} km</Text>
           <Text style={styles.info}>Consumo: {item.consumoEstimado !== undefined ? item.consumoEstimado.toFixed(2) : '-'} L</Text>
           {item.dataViagem && <Text style={styles.info}>Data: {formatarData(item.dataViagem)}</Text>}
         </Card.Content>
       </Card>
     );
-  }, [enderecos]);
+  }, [enderecos, veiculosMap]);
 
   return (
     <View style={styles.container}>

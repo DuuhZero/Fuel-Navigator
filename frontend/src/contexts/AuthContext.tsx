@@ -8,6 +8,7 @@ interface AuthContextData {
   token: string | null;
   login: (email: string, senha: string) => Promise<void>;
   logout: () => Promise<void>;
+  updateUsuario: (updates: Partial<Usuario>) => Promise<void>;
   carregando: boolean;
 }
 
@@ -61,6 +62,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const updateUsuario = async (updates: Partial<Usuario>) => {
+    try {
+      const response = await api.put('/usuarios', updates);
+      const updated = response.data;
+      setUsuario(updated);
+      await AsyncStorage.setItem('usuario', JSON.stringify(updated));
+    } catch (error) {
+      console.error('Erro ao atualizar usuário:', error);
+      throw error;
+    }
+  };
+
   const logout = async () => {
     try {
       await AsyncStorage.removeItem('token');
@@ -74,7 +87,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ usuario, token, login, logout, carregando }}>
+    <AuthContext.Provider value={{ usuario, token, login, logout, updateUsuario, carregando }}>
       {children}
     </AuthContext.Provider>
   );

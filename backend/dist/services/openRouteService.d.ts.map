@@ -1,0 +1,1 @@
+{"version":3,"file":"openRouteService.d.ts","sourceRoot":"","sources":["../../src/services/openRouteService.ts"],"names":[],"mappings":"AAGA,qBAAa,gBAAgB;WACd,YAAY,CAAC,MAAM,EAAE,CAAC,MAAM,EAAE,MAAM,CAAC,EAAE,OAAO,EAAE,CAAC,MAAM,EAAE,MAAM,CAAC,EAAE,MAAM,GAAE,MAAsB;WA6BhG,QAAQ,CAAC,KAAK,EAAE,MAAM;WA+BtB,eAAe,CAAC,MAAM,EAAE,CAAC,MAAM,EAAE,MAAM,CAAC;WA4BxC,aAAa;CAgB3B"}

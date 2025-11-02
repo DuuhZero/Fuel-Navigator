@@ -22,8 +22,7 @@ const RegistroScreen: React.FC<Props> = ({ navigation }) => {
     email: '',
     senha: '',
     confirmarSenha: '',
-    telefone: '',
-    dataNascimento: '',
+    // telefone e dataNascimento removidos por escolha do produto
   });
   const [carregando, setCarregando] = useState(false);
 
@@ -48,8 +47,6 @@ const RegistroScreen: React.FC<Props> = ({ navigation }) => {
         nome: formData.nome,
         email: formData.email,
         senha: formData.senha,
-        telefone: formData.telefone || undefined,
-        dataNascimento: formData.dataNascimento || undefined,
       });
 
       Alert.alert('Sucesso', 'Conta criada com sucesso! Faça login para continuar.');
@@ -102,23 +99,7 @@ const RegistroScreen: React.FC<Props> = ({ navigation }) => {
         mode="outlined"
       />
       
-      <TextInput
-        label="Telefone (opcional)"
-        value={formData.telefone}
-        onChangeText={(value) => handleChange('telefone', value)}
-        keyboardType="phone-pad"
-        style={styles.input}
-        mode="outlined"
-      />
-      
-      <TextInput
-        label="Data de Nascimento (opcional)"
-        value={formData.dataNascimento}
-        onChangeText={(value) => handleChange('dataNascimento', value)}
-        placeholder="DD/MM/AAAA"
-        style={styles.input}
-        mode="outlined"
-      />
+      {/* telefone e data de nascimento removidos */}
       
       <Button
         mode="contained"
