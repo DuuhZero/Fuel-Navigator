@@ -12,6 +12,14 @@ import rotaRoutes from './routes/rota';
 import historicoRoutes from './routes/historico';
 import alertaRoutes from './routes/alerta';
 import relatorioRoutes from './routes/relatorio';
+
+// Importar modelos para garantir registro no Mongoose antes de qualquer populate
+import './models/Usuario';
+import './models/Veiculo';
+import './models/Rota';
+import './models/HistoricoViagem';
+import './models/Alerta';
+
 dotenv.config({ path: '.env' });
 
 

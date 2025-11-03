@@ -1,10 +1,10 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Platform } from 'react-native';
 
 
-// Sempre usar backend em nuvem para garantir acesso pelo Expo Go
-const API_BASE_URL = 'https://backend-fuelnav.vercel.app/api';
+// Backend local na porta 5000 (acessível pelo IP da sua máquina na mesma rede do celular)
+// Exemplo: http://SEU-IP-LAN:5000/api
+const API_BASE_URL = 'http://192.168.137.116:5000/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,

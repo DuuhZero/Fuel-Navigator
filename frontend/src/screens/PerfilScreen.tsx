@@ -56,11 +56,10 @@ export default function PerfilScreen() {
   };
   return (
     <View style={styles.container}>
-  <Text variant="headlineMedium" style={styles.titulo}>Perfil do Usuário</Text>
       
       {usuario && (
         <View style={styles.infoContainer}>
-          <Text variant="titleMedium">Nome: {usuario.nome}</Text>
+          <Text variant="titleLarge">Nome: {usuario.nome}</Text>
           <Text variant="bodyMedium">Email: {usuario.email}</Text>
         </View>
       )}
@@ -151,6 +150,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
+    fontWeight: 'bold',
   },
   infoContainer: {
     marginTop: 20,

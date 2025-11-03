@@ -1,6 +1,6 @@
 import express from 'express';
 import mongoose from 'mongoose';
-import { autenticar } from '../middleware/auth';
+import { autenticar, AuthRequest } from '../middleware/auth';
 import { OpenRouteService } from '../services/openRouteService';
 import Veiculo from '../models/Veiculo';
 import HistoricoViagem from '../models/HistoricoViagem';
@@ -11,7 +11,7 @@ const router = express.Router();
 router.use(autenticar);
 
 // POST /api/rotas/calcular — calcula uma rota usando OpenRouteService
-router.post('/calcular', async (req, res) => {
+router.post('/calcular', async (req: AuthRequest, res: express.Response) => {
   try {
     const { origem, destino, veiculoId, precoCombustivel } = req.body;
 
@@ -21,7 +21,7 @@ router.post('/calcular', async (req, res) => {
     }
 
     // Validar veículo do usuário
-    const veiculo = await Veiculo.findOne({ _id: veiculoId, usuarioId: req.usuario._id });
+  const veiculo = await Veiculo.findOne({ _id: veiculoId, usuarioId: req.usuario!._id });
     if (!veiculo) {
       res.status(404).json({ message: 'Veículo não encontrado' });
       return;
@@ -69,7 +69,7 @@ router.post('/calcular', async (req, res) => {
 });
 
 // POST /api/rotas — salva um registro básico no histórico (KISS)
-router.post('/', async (req, res) => {
+router.post('/', async (req: AuthRequest, res: express.Response) => {
   try {
     const {
       veiculoId,
@@ -96,7 +96,7 @@ router.post('/', async (req, res) => {
 
     // Persistir como histórico mínimo (sem depender do schema de Rota)
     await HistoricoViagem.create({
-      usuarioId: req.usuario._id,
+  usuarioId: req.usuario!._id,
       veiculoId,
       origem: origem || '',
       destino: destino || '',

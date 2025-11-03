@@ -154,7 +154,6 @@ export default function HistoricoScreen() {
 
   return (
     <View style={styles.container}>
-      <Text variant="headlineMedium" style={styles.titulo}>Histórico de Viagens</Text>
       {carregando ? (
         <ActivityIndicator size="large" style={{ marginTop: 32 }} />
       ) : historico.length === 0 ? (
