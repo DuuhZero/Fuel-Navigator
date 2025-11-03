@@ -40,14 +40,14 @@ O objetivo desse app é fornecer aos usuários informações precisas sobre o co
 
 | RANK | SPRINT | PRIORIDADE | ESTIMATIVA | USER STORY (NOME)                                             | STATUS |
 |:----:|:------:|:----------:|:----------:|:-------------------------------------------------------------:|:------:|
-| 1    |   1   |    Alta     |     5      | Como Cliente, quero um CRUD para os usuários, para gerenciamento de suas informações.|        |
-| 2    |   1   |    Alta     |     3      | Como Usuário, quero um CRUD para o gerenciamento de veiculos, para gerenciamento de suas informações.|        |
-| 3    |   1   |    Alta     |     5      | Como Usuário, quero uma tela de navegação de mostre as rotas selecionadas, para que eu possa utilizar como navegador.|        |
-| 4    |   1   |    Alta     |    5       | Como Usuário, quero que seja possível o calculo de consumo de gasolina com base no veiculo selecionado, para melhor visualização dos dados.|        |
-| 5   |   1   |   Alta      |     8      | Como Usuário, quero processar e armazenar automaticamente os dados recebidos por meio um banco de dados em nuvem, para que os dados não sejam perdidos ou dependam do dispositivo.|        |
-| 6   |   1   |  Alta   |      8     | Como Usuário, quero que seja possível armazenar em um historico as rotas anteriormente buscadas, para que eu possa acompanhar de maneira acertiva.|        |
-| 7   |   2   |   Alta     |      3     | Como Usuário, quero que o sistema tenha a opção de salvar as rotas utilizadas, para facilitação de busca.|        |
-| 8    |  2   |    Média      |     5      | Como Usuário, quero que seja possível a geração de relatórios que informe o consumo e a distância percorrida ao longo do mês.|        |
+| 1    |   1   |    Alta     |     5      | Como Cliente, quero um CRUD para os usuários, para gerenciamento de suas informações.|   ✅     |
+| 2    |   1   |    Alta     |     3      | Como Usuário, quero um CRUD para o gerenciamento de veiculos, para gerenciamento de suas informações.|   ✅     |
+| 3    |   1   |    Alta     |     5      | Como Usuário, quero uma tela de navegação de mostre as rotas selecionadas, para que eu possa utilizar como navegador.|   ✅     |
+| 4    |   1   |    Alta     |    5       | Como Usuário, quero que seja possível o calculo de consumo de gasolina com base no veiculo selecionado, para melhor visualização dos dados.|  ✅      |
+| 5   |   1   |   Alta      |     8      | Como Usuário, quero processar e armazenar automaticamente os dados recebidos por meio um banco de dados em nuvem, para que os dados não sejam perdidos ou dependam do dispositivo.|   ✅     |
+| 6   |   1   |  Alta   |      8     | Como Usuário, quero que seja possível armazenar em um historico as rotas anteriormente buscadas, para que eu possa acompanhar de maneira acertiva.|  ✅      |
+| 7   |   2   |   Alta     |      3     | Como Usuário, quero que o sistema tenha a opção de salvar as rotas utilizadas, para facilitação de busca.|  ✅      |
+| 8    |  2   |    Média      |     5      | Como Usuário, quero que seja possível a geração de relatórios que informe o consumo e a distância percorrida ao longo do mês.|  ✅      |
 | 9    |   3   |    Média    |      8     | Como Usuário, quero o software possua uma interface simples e prática, para que eu possar navegar sem dificuldades.|        |
 | 10    |   3   |    Média     |    3       | Como Cliente, quero que o software possua autenticação para o login de usuários, para que possa haver maior segurança em relação a aplicação.|        |
 
