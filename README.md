@@ -11,9 +11,8 @@ O objetivo desse app é fornecer aos usuários informações precisas sobre o co
 |RF2 | Gerenciamento de Veiculos | O software precisa conter um CRUD de veículos, permitindo o cadastro, edição, listagem e remoção dos respectivos dados.|
 |RF3 | Navegação e rotas | O software deve conter a funcionalidade de busca por rotas, sendo possível salvar rotas e utiliza-las offline, sendo informado o consumo de gasolina com base na distância.|
 |RF4 | Histórico e relatórios | É necessário conter um histórico de rotas procuradas recentemente, como também a geração de relatórios semanais/mensais sobre consumo.|
-|RF5 | Notificações e alertas | Devem ser emitidos avisos e alertas baseados em condições anormais de consumo.|
-|RF6 | Persistência e offline | A aplicação deve oferecer um backup local ou em núvem, para que os dados não sejam perdidos.|
-|RF7 | Interface | O software deve ter uma interface fácil e acessivel, contendo a possibilidade de temas claros e escuros.|
+|RF5 | Persistência e offline | A aplicação deve oferecer um backup local ou em núvem, para que os dados não sejam perdidos.|
+|RF6 | Interface | O software deve ter uma interface fácil e acessivel, contendo a possibilidade de temas claros e escuros.|
 
 ### Requisitos Não Funcionais
 
