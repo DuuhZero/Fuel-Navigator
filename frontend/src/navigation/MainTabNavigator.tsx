@@ -1,8 +1,9 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../contexts/ThemeContext';
 
-// Screens (você precisará criar essas telas depois)
+// Screens
 import NavegacaoScreen from '../screens/NavegacaoScreen';
 import VeiculosScreen from '../screens/VeiculosScreen';
 import HistoricoScreen from '../screens/HistoricoScreen';
@@ -11,13 +12,18 @@ import PerfilScreen from '../screens/PerfilScreen';
 const Tab = createBottomTabNavigator();
 
 export default function MainTabNavigator() {
+  const { colors, isDark } = useTheme();
+  
   return (
     <Tab.Navigator
       screenOptions={{
-        headerShown: true,
-        tabBarActiveTintColor: '#FF9B42',
-        tabBarInactiveTintColor: '#bbbbbb',
-        tabBarStyle: { backgroundColor: '#fff' },
+        headerShown: false,
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: isDark ? '#6B7280' : '#bbbbbb',
+        tabBarStyle: { 
+          backgroundColor: colors.surface,
+          borderTopColor: colors.border,
+        },
       }}
     >
       <Tab.Screen
@@ -53,12 +59,11 @@ export default function MainTabNavigator() {
         name="Perfil"
         component={PerfilScreen}
         options={{
-          tabBarIcon: ({ color, size }) => (
+          tabBarIcon: ({ color, size}) => (
             <Ionicons name="person" size={size} color={color} />
           ),
         }}
       />
-      
     </Tab.Navigator>
   );
 }

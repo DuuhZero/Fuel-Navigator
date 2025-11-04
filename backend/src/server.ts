@@ -12,11 +12,19 @@ import rotaRoutes from './routes/rota';
 import historicoRoutes from './routes/historico';
 import alertaRoutes from './routes/alerta';
 import relatorioRoutes from './routes/relatorio';
+
+// Importar modelos para garantir registro no Mongoose antes de qualquer populate
+import './models/Usuario';
+import './models/Veiculo';
+import './models/Rota';
+import './models/HistoricoViagem';
+import './models/Alerta';
+
 dotenv.config({ path: '.env' });
 
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = parseInt(process.env.PORT || '5000', 10);
 
 app.use(helmet());
 app.use(cors({
@@ -70,7 +78,7 @@ app.use('*', (req, res) => {
   res.status(404).json({ message: 'Rota não encontrada' });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Servidor rodando na porta ${PORT}`);
   console.log(`📊 Ambiente: ${process.env.NODE_ENV}`);
   console.log(`🔗 MongoDB: ${MONGODB_URI}`);

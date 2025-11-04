@@ -1,0 +1,31 @@
+{
+  "expo": {
+    "android": {
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "FOREGROUND_SERVICE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.FOREGROUND_SERVICE"
+      ],
+      "config": {
+        "googleMaps": {
+          "apiKey": "SUA_CHAVE_GOOGLE_MAPS_AQUI"
+        }
+      },
+      "package": "com.anonymous.fuelnavapp"
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Permitir $(PRODUCT_NAME) usar sua localização para calcular rotas mais precisas."
+        }
+      ]
+    ],
+    "ios": {
+      "bundleIdentifier": "com.anonymous.fuelnavapp"
+    }
+  }
+}

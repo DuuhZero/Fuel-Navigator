@@ -11,17 +11,14 @@ const VeiculoSchema: Schema = new Schema({
   },
   marca: {
     type: String,
-    required: true,
     trim: true
   },
   modelo: {
     type: String,
-    required: true,
     trim: true
   },
   ano: {
     type: Number,
-    required: true,
     min: 1900,
     max: new Date().getFullYear() + 1
   },

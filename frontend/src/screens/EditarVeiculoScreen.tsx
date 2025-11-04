@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, Alert } from 'react-native';
-import { TextInput, Button, Text, Card, SegmentedButtons } from 'react-native-paper';
+import { TextInput, Button, Text, Card, SegmentedButtons, IconButton } from 'react-native-paper';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Veiculo } from '../types';
 import api from '../services/api';
 
@@ -14,6 +16,7 @@ export default function EditarVeiculoScreen() {
   const navigation = useNavigation();
   const route = useRoute();
   const { veiculo } = route.params as RouteParams;
+  const { colors, toggleTheme } = useTheme();
   
   const [formData, setFormData] = useState({
     marca: veiculo.marca,
@@ -33,8 +36,9 @@ export default function EditarVeiculoScreen() {
   };
 
   const handleSubmit = async () => {
-    if (!formData.marca || !formData.modelo || !formData.ano || !formData.consumoMedio) {
-      Alert.alert('Erro', 'Preencha os campos obrigatórios: marca, modelo, ano e consumo médio');
+    // marca e ano agora são opcionais; exigir somente modelo e consumo médio
+    if (!formData.modelo || !formData.consumoMedio) {
+      Alert.alert('Erro', 'Preencha os campos obrigatórios: modelo e consumo médio');
       return;
     }
 
@@ -57,18 +61,19 @@ export default function EditarVeiculoScreen() {
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <Card style={styles.card}>
-        <Card.Content>
-          <Text variant="titleLarge" style={styles.titulo}>Editar Veículo</Text>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
 
-          <TextInput
-            label="Marca *"
-            value={formData.marca}
-            onChangeText={(value) => handleChange('marca', value)}
-            style={styles.input}
-            mode="outlined"
-          />
+      <ScrollView style={styles.scrollContent} contentContainerStyle={{marginBottom:600 }}>
+        <Card style={[styles.card, { backgroundColor: colors.card }]}>
+          <Card.Content>
+            <TextInput
+              label="Marca"
+              value={formData.marca}
+              onChangeText={(value) => handleChange('marca', value)}
+              style={styles.input}
+              mode="outlined"
+              textColor={colors.text}
+            />
 
           <TextInput
             label="Modelo *"
@@ -76,15 +81,17 @@ export default function EditarVeiculoScreen() {
             onChangeText={(value) => handleChange('modelo', value)}
             style={styles.input}
             mode="outlined"
+            textColor={colors.text}
           />
 
           <TextInput
-            label="Ano *"
+            label="Ano"
             value={formData.ano}
             onChangeText={(value) => handleChange('ano', value)}
             keyboardType="numeric"
             style={styles.input}
             mode="outlined"
+            textColor={colors.text}
           />
 
           <TextInput
@@ -93,6 +100,7 @@ export default function EditarVeiculoScreen() {
             onChangeText={(value) => handleChange('placa', value)}
             style={styles.input}
             mode="outlined"
+            textColor={colors.text}
           />
 
           <TextInput
@@ -102,9 +110,10 @@ export default function EditarVeiculoScreen() {
             keyboardType="numeric"
             style={styles.input}
             mode="outlined"
+            textColor={colors.text}
           />
 
-          <Text style={styles.label}>Tipo de Combustível *</Text>
+          <Text style={[styles.label, { color: colors.text }]}>Tipo de Combustível *</Text>
           <SegmentedButtons
             value={formData.tipoCombustivel}
             onValueChange={(value) => handleChange('tipoCombustivel', value as any)}
@@ -124,6 +133,7 @@ export default function EditarVeiculoScreen() {
             keyboardType="numeric"
             style={styles.input}
             mode="outlined"
+            textColor={colors.text}
           />
 
           <TextInput
@@ -132,6 +142,7 @@ export default function EditarVeiculoScreen() {
             onChangeText={(value) => handleChange('cor', value)}
             style={styles.input}
             mode="outlined"
+            textColor={colors.text}
           />
 
           <Button 
@@ -139,7 +150,8 @@ export default function EditarVeiculoScreen() {
             onPress={handleSubmit}
             loading={carregando}
             disabled={carregando}
-            style={styles.botao}
+            style={[styles.botao, { backgroundColor: colors.primary }]}
+            textColor="#000"
           >
             Salvar Alterações
           </Button>
@@ -148,12 +160,14 @@ export default function EditarVeiculoScreen() {
             mode="outlined" 
             onPress={() => navigation.goBack()}
             style={styles.botao}
+            textColor={colors.text}
           >
             Cancelar
           </Button>
         </Card.Content>
       </Card>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
@@ -161,7 +175,30 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
+    marginTop:-20,
     backgroundColor: '#f5f5f5'
+  },
+  headerGradient: {
+    position: 'absolute',
+    top: 10,
+    left: 16,
+    right: 16,
+    borderRadius: 14,
+    padding: 10,
+    zIndex: 50,
+    elevation: 6,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between'
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '700'
+  },
+  scrollContent: {
+    marginTop: 70,
   },
   card: {
     marginBottom: 20,

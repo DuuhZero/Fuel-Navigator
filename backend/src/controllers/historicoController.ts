@@ -20,11 +20,20 @@ export const criarHistorico = async (req: AuthRequest, res: Response): Promise<v
 
 export const listarHistorico = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const historicos = await HistoricoViagem.find({ usuarioId: req.usuario._id })
-      .populate('veiculoId', 'marca modelo placa')
-      .populate('rotaId', 'origem destino origemEndereco destinoEndereco distancia duracao')
-      .sort({ dataViagem: -1 });
-    res.json(historicos);
+    try {
+      const historicos = await HistoricoViagem.find({ usuarioId: req.usuario._id })
+        .populate('veiculoId', 'marca modelo placa')
+        .populate('rotaId', 'origem destino origemEndereco destinoEndereco distancia duracao')
+        .sort({ dataViagem: -1 });
+      res.json(historicos);
+    } catch (populateError) {
+      // Fallback sem populate caso haja CastError devido a ids inválidos em docs antigos
+      console.warn('Falha no populate do histórico, retornando sem populate:', populateError);
+      const historicosSemPopulate = await HistoricoViagem.find({ usuarioId: req.usuario._id })
+        .sort({ dataViagem: -1 })
+        .lean();
+      res.json(historicosSemPopulate);
+    }
   } catch (error) {
     res.status(500).json({ message: 'Erro ao listar histórico' });
   }
