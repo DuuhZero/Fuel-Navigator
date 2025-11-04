@@ -1,10 +1,13 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
+
+// Pega o IP automaticamente da variável de ambiente
+const API_HOST = Constants.expoConfig?.extra?.apiHost || 'localhost';
+
+const API_BASE_URL = `http://${API_HOST}:5000/api`;
 
 
-// Backend local na porta 5000 (acessível pelo IP da sua máquina na mesma rede do celular)
-// Exemplo: http://SEU-IP-LAN:5000/api
-const API_BASE_URL = 'http://192.168.137.116:5000/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -17,6 +20,7 @@ api.interceptors.request.use(async (config) => {
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
   } catch (error) {
     console.error('Erro ao obter token:', error);
   }
@@ -24,8 +28,11 @@ api.interceptors.request.use(async (config) => {
 });
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    return response;
+  },
   async (error) => {
+    
     if (error.response?.status === 401) {
       try {
         await AsyncStorage.removeItem('token');

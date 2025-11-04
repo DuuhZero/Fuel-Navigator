@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, Alert } from 'react-native';
-import { TextInput, Button, Text, Card, SegmentedButtons } from 'react-native-paper';
+import { TextInput, Button, Text, Card, SegmentedButtons, IconButton } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
+import { LinearGradient } from 'expo-linear-gradient';
 import api from '../services/api';
 
 export default function AdicionarVeiculoScreen() {
   const navigation = useNavigation();
   const { usuario } = useAuth();
+  const { colors, toggleTheme } = useTheme();
   
   const [formData, setFormData] = useState({
     marca: '',
@@ -51,18 +54,19 @@ export default function AdicionarVeiculoScreen() {
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <Card style={styles.card}>
-        <Card.Content>
-          <Text variant="titleLarge" style={styles.titulo}>Adicionar Veículo</Text>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
 
-          <TextInput
-            label="Marca "
-            value={formData.marca}
-            onChangeText={(value) => handleChange('marca', value)}
-            style={styles.input}
-            mode="outlined"
-          />
+      <ScrollView style={styles.scrollContent} contentContainerStyle={{ paddingBottom: 100 }}>
+        <Card style={[styles.card, { backgroundColor: colors.card }]}>
+          <Card.Content>
+            <TextInput
+              label="Marca "
+              value={formData.marca}
+              onChangeText={(value) => handleChange('marca', value)}
+              style={styles.input}
+              mode="outlined"
+              textColor={colors.text}
+            />
 
           <TextInput
             label="Modelo *"
@@ -70,6 +74,7 @@ export default function AdicionarVeiculoScreen() {
             onChangeText={(value) => handleChange('modelo', value)}
             style={styles.input}
             mode="outlined"
+            textColor={colors.text}
           />
 
           <TextInput
@@ -79,6 +84,7 @@ export default function AdicionarVeiculoScreen() {
             keyboardType="numeric"
             style={styles.input}
             mode="outlined"
+            textColor={colors.text}
           />
 
           <TextInput
@@ -87,6 +93,7 @@ export default function AdicionarVeiculoScreen() {
             onChangeText={(value) => handleChange('placa', value)}
             style={styles.input}
             mode="outlined"
+            textColor={colors.text}
           />
 
           <TextInput
@@ -96,9 +103,10 @@ export default function AdicionarVeiculoScreen() {
             keyboardType="numeric"
             style={styles.input}
             mode="outlined"
+            textColor={colors.text}
           />
 
-          <Text style={styles.label}>Tipo de Combustível *</Text>
+          <Text style={[styles.label, { color: colors.text }]}>Tipo de Combustível *</Text>
           <SegmentedButtons
             value={formData.tipoCombustivel}
             onValueChange={(value) => handleChange('tipoCombustivel', value as any)}
@@ -118,6 +126,7 @@ export default function AdicionarVeiculoScreen() {
             keyboardType="numeric"
             style={styles.input}
             mode="outlined"
+            textColor={colors.text}
           />
 
           <TextInput
@@ -126,6 +135,7 @@ export default function AdicionarVeiculoScreen() {
             onChangeText={(value) => handleChange('cor', value)}
             style={styles.input}
             mode="outlined"
+            textColor={colors.text}
           />
 
           <Button 
@@ -133,7 +143,8 @@ export default function AdicionarVeiculoScreen() {
             onPress={handleSubmit}
             loading={carregando}
             disabled={carregando}
-            style={styles.botao}
+            style={[styles.botao, { backgroundColor: colors.primary }]}
+            textColor="#000"
           >
             Adicionar Veículo
           </Button>
@@ -142,12 +153,14 @@ export default function AdicionarVeiculoScreen() {
             mode="outlined" 
             onPress={() => navigation.goBack()}
             style={styles.botao}
+            textColor={colors.text}
           >
             Cancelar
           </Button>
         </Card.Content>
       </Card>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
@@ -155,7 +168,30 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
+    marginTop:-20,
     backgroundColor: '#f5f5f5'
+  },
+  headerGradient: {
+    position: 'absolute',
+    top: 10,
+    left: 16,
+    right: 16,
+    borderRadius: 14,
+    padding: 10,
+    zIndex: 50,
+    elevation: 6,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between'
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '700'
+  },
+  scrollContent: {
+    marginTop: 70,
   },
   card: {
     marginBottom: 20,

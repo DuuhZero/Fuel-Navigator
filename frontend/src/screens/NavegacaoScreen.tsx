@@ -8,6 +8,7 @@ import { Veiculo, Coordenada } from '../types';
 import api from '../services/api';
 import OpenRouteMap from '../components/OpenRouteMap';
 import { useLocation } from '../hooks/useLocation';
+import { useTheme } from '../contexts/ThemeContext';
 const { height } = Dimensions.get('window');
 
 interface CalculoRota {
@@ -21,6 +22,7 @@ interface CalculoRota {
 }
 
 const NavegacaoScreen: React.FC = () => {
+  const { colors, isDark, toggleTheme } = useTheme();
   // Helpers de formatação para manter consistência entre cálculo e lista de salvas
   const formatKm = (km?: number) => {
     if (km == null || isNaN(km as number)) return '-';
@@ -89,11 +91,34 @@ const NavegacaoScreen: React.FC = () => {
 
   const carregarRotasSalvas = async () => {
     try {
-      const rotasSalvasString = await AsyncStorage.getItem('@saved_routes');
-      if (rotasSalvasString) {
-        const rotas = JSON.parse(rotasSalvasString);
-        setRotasSalvas(rotas);
+      // Leitura resiliente com migração de chaves antigas
+      const parseSafe = (s: string | null) => {
+        if (!s) return null as any;
+        try { return JSON.parse(s); } catch { return null as any; }
+      };
+
+      let rotas: any = parseSafe(await AsyncStorage.getItem('@saved_routes'));
+
+      if (!Array.isArray(rotas) || rotas.length === 0) {
+        // tenta chaves antigas possíveis
+        const antigos = [
+          '@savedRoutes',
+          'savedRoutes',
+          '@routes',
+          '@saved_routes_v1'
+        ];
+        for (const key of antigos) {
+          const v = parseSafe(await AsyncStorage.getItem(key));
+          if (Array.isArray(v) && v.length) { rotas = v; break; }
+          if (v && typeof v === 'object' && Array.isArray(v.routes)) { rotas = v.routes; break; }
+        }
+        // normaliza e persiste na nova chave se encontrou
+        if (Array.isArray(rotas) && rotas.length) {
+          try { await AsyncStorage.setItem('@saved_routes', JSON.stringify(rotas)); } catch {}
+        }
       }
+
+      if (Array.isArray(rotas)) setRotasSalvas(rotas);
     } catch (error) {
       console.error('Erro ao carregar rotas salvas:', error);
     }
@@ -310,7 +335,7 @@ const NavegacaoScreen: React.FC = () => {
   });
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}> 
       {/* Mapa do OpenRoute Service */}
       <OpenRouteMap
         coordenadas={rota?.coordenadas || (location ? [{ latitude: location.coords.latitude, longitude: location.coords.longitude }] : [])}
@@ -325,28 +350,28 @@ const NavegacaoScreen: React.FC = () => {
         onRequestClose={() => setModalRotasVisible(false)}
         animationType="slide"
       >
-        <View style={{ flex: 1, padding: 16, backgroundColor: '#fff' }}>
+        <View style={{ flex: 1, padding: 16, backgroundColor: colors.background }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <Text variant="titleLarge">Rotas Salvas</Text>
-            <IconButton icon="close" onPress={() => setModalRotasVisible(false)} />
+            <Text variant="titleLarge" style={{ color: colors.text }}>Rotas Salvas</Text>
+            <IconButton icon="close" onPress={() => setModalRotasVisible(false)} iconColor={colors.text} />
           </View>
 
           <ScrollView>
             {rotasSalvas.map((rotaSalva, index) => (
-              <Card key={index} style={{ marginBottom: 12 }}>
+              <Card key={index} style={{ marginBottom: 12, backgroundColor: colors.card }}>
                 <Card.Content>
-                  <Text variant="titleMedium">{rotaSalva.origem} → {rotaSalva.destino}</Text>
-                  <Text variant="bodyMedium">Distância: {formatKm(rotaSalva.distancia)}</Text>
-                  <Text variant="bodyMedium">Duração: {formatDuration(rotaSalva.duracao)}</Text>
+                  <Text variant="titleMedium" style={{ color: colors.text }}>{rotaSalva.origem} → {rotaSalva.destino}</Text>
+                  <Text variant="bodyMedium" style={{ color: colors.textSecondary }}>Distância: {formatKm(rotaSalva.distancia)}</Text>
+                  <Text variant="bodyMedium" style={{ color: colors.textSecondary }}>Duração: {formatDuration(rotaSalva.duracao)}</Text>
                 </Card.Content>
                 <Card.Actions>
-                  <Button onPress={() => usarRotaSalva(rotaSalva)}>Usar</Button>
-                  <Button onPress={() => excluirRotaSalva(index)}>Excluir</Button>
+                  <Button onPress={() => usarRotaSalva(rotaSalva)} textColor={colors.primary}>Usar</Button>
+                  <Button onPress={() => excluirRotaSalva(index)} textColor={isDark ? '#FFF' : '#000'}>Excluir</Button>
                 </Card.Actions>
               </Card>
             ))}
             {rotasSalvas.length === 0 && (
-              <Text style={{ textAlign: 'center', marginTop: 20, color: '#666' }}>
+              <Text style={{ textAlign: 'center', marginTop: 20, color: colors.textSecondary }}>
                 Nenhuma rota salva
               </Text>
             )}
@@ -356,14 +381,23 @@ const NavegacaoScreen: React.FC = () => {
 
       {/* Interface única de busca de rota */}
       {!mostrarResultado && (
-        <View style={styles.menuBuscaContainer}>
+        <View style={[styles.menuBuscaContainer, { backgroundColor: colors.card }]}> 
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-            <Text style={[styles.tituloBusca, { flex: 1 }]}>Calcular rota</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+              <IconButton
+                icon="map-marker-path"
+                size={20}
+                iconColor={colors.primary}
+                style={{ margin: 0, marginRight: 6 }}
+              />
+              <Text style={[styles.tituloBusca, { color: colors.text }]}>Calcular rota</Text>
+            </View>
             <IconButton 
               icon="history" 
               onPress={() => setModalRotasVisible(true)} 
               mode="contained"
               size={20}
+              iconColor={colors.primary}
             />
           </View>
           <TextInput
@@ -371,41 +405,59 @@ const NavegacaoScreen: React.FC = () => {
             value={origem}
             onChangeText={setOrigem}
             placeholder="Origem "
-            style={styles.inputBusca}
+            style={[styles.inputBusca, { backgroundColor: colors.surface }]}
+            mode="outlined"
+            textColor={colors.text}
+            outlineColor={colors.border}
+            activeOutlineColor={colors.primary}
+            theme={{ colors: { onSurfaceVariant: colors.textSecondary, surface: colors.surface } }}
           />
           <TextInput
             label="Destino"
             value={destino}
             onChangeText={setDestino}
             placeholder="Destino"
-            style={styles.inputBusca}
+            style={[styles.inputBusca, { backgroundColor: colors.surface }]}
+            mode="outlined"
+            textColor={colors.text}
+            outlineColor={colors.border}
+            activeOutlineColor={colors.primary}
+            theme={{ colors: { onSurfaceVariant: colors.textSecondary, surface: colors.surface } }}
           />
           <TextInput
             label="Preço do combustível (opcional)"
             value={precoCombustivel}
             onChangeText={setPrecoCombustivel}
             keyboardType="numeric"
-            style={styles.inputBusca}
+            style={[styles.inputBusca, { backgroundColor: colors.surface }]}
             placeholder="Ex: 5.50"
+            mode="outlined"
+            textColor={colors.text}
+            outlineColor={colors.border}
+            activeOutlineColor={colors.primary}
+            theme={{ colors: { onSurfaceVariant: colors.textSecondary, surface: colors.surface } }}
           />
           {veiculos.length > 0 && (
             <View style={styles.seletorVeiculoContainer}>
-              <Text style={styles.label}>Veículo</Text>
+              <Text style={[styles.label, { color: colors.text }]}>Veículo</Text>
               <Button
                 mode="outlined"
                 style={styles.seletorVeiculoBotao}
+                textColor={colors.text}
                 onPress={() => setMostrarSeletorVeiculo(true)}
               >
                 {veiculoSelecionado ? `${veiculoSelecionado.marca} ${veiculoSelecionado.modelo}` : 'Selecionar veículo'}
               </Button>
               {/* Modal de seleção de veículo */}
               {mostrarSeletorVeiculo && (
-                <View style={styles.modalSeletorVeiculo}>
+                <View style={[styles.modalSeletorVeiculo, { backgroundColor: colors.card }]}>
                   {veiculos.map((veiculo) => (
                     <Button
                       key={veiculo._id}
                       mode={veiculoSelecionado?._id === veiculo._id ? 'contained' : 'outlined'}
                       style={styles.seletorVeiculoItem}
+                      buttonColor={veiculoSelecionado?._id === veiculo._id ? colors.primary : 'transparent'}
+                      textColor={veiculoSelecionado?._id === veiculo._id ? '#000' : colors.text}
                       onPress={() => {
                         setVeiculoSelecionado(veiculo);
                         setMostrarSeletorVeiculo(false);
@@ -414,12 +466,12 @@ const NavegacaoScreen: React.FC = () => {
                       {veiculo.marca} {veiculo.modelo}
                     </Button>
                   ))}
-                  <Button mode="text" onPress={() => setMostrarSeletorVeiculo(false)} style={{ marginTop: 8 }}>Cancelar</Button>
+                  <Button mode="text" onPress={() => setMostrarSeletorVeiculo(false)} style={{ marginTop: 8 }} textColor={colors.text}>Cancelar</Button>
                 </View>
               )}
             </View>
           )}
-          <Button mode="contained" onPress={calcularRota} style={styles.botaoBusca} loading={carregando} disabled={carregando} icon="routes">
+          <Button mode="contained" onPress={calcularRota} style={[styles.botaoBusca, { backgroundColor: colors.primary }]} loading={carregando} disabled={carregando} icon="routes" textColor="#000">
             {carregando ? 'Calculando...' : 'Calcular Rota'}
           </Button>
         </View>
@@ -428,12 +480,12 @@ const NavegacaoScreen: React.FC = () => {
       {/* Overlay de Resultados */}
       {mostrarResultado && rota && (
         <Animated.View
-          style={[styles.resultadoOverlay, { transform: [{ translateY: resultadoTranslateY }] }]}
+          style={[styles.resultadoOverlay, { transform: [{ translateY: resultadoTranslateY }], backgroundColor: colors.card }]}
         >
           <Card style={styles.resultadoCard}>
             <Card.Content>
               <View style={styles.resultadoHeader}>
-                <Text variant="titleMedium" style={styles.tituloResultado}>
+                <Text variant="titleMedium" style={[styles.tituloResultado, { color: colors.text }]}>
                   📍 {rota.origem || '-'} → {rota.destino || '-'}
                 </Text>
                 <IconButton
@@ -445,25 +497,25 @@ const NavegacaoScreen: React.FC = () => {
               </View>
 
               <View style={styles.infoContainer}>
-                <View style={styles.infoItem}>
-                  <Text style={styles.infoLabel}>Distância</Text>
-                  <Text style={styles.infoValue}>{typeof rota.distancia === 'number' ? rota.distancia.toFixed(1) : '-'} km</Text>
+                <View style={[styles.infoItem, { backgroundColor: colors.surface, borderLeftColor: colors.primary }]}>
+                  <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Distância</Text>
+                  <Text style={[styles.infoValue, { color: colors.text }]}>{typeof rota.distancia === 'number' ? rota.distancia.toFixed(1) : '-'} km</Text>
                 </View>
 
-                <View style={styles.infoItem}>
-                  <Text style={styles.infoLabel}>Tempo</Text>
-                  <Text style={styles.infoValue}>{typeof rota.duracao === 'number' ? Math.round(rota.duracao) : '-'} min</Text>
+                <View style={[styles.infoItem, { backgroundColor: colors.surface, borderLeftColor: colors.primary }]}>
+                  <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Tempo</Text>
+                  <Text style={[styles.infoValue, { color: colors.text }]}>{typeof rota.duracao === 'number' ? Math.round(rota.duracao) : '-'} min</Text>
                 </View>
 
-                <View style={styles.infoItem}>
-                  <Text style={styles.infoLabel}>Consumo</Text>
-                  <Text style={styles.infoValue}>{typeof rota.consumoEstimado === 'number' ? rota.consumoEstimado.toFixed(1) : '-'} L</Text>
+                <View style={[styles.infoItem, { backgroundColor: colors.surface, borderLeftColor: colors.primary }]}>
+                  <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Consumo</Text>
+                  <Text style={[styles.infoValue, { color: colors.text }]}>{typeof rota.consumoEstimado === 'number' ? rota.consumoEstimado.toFixed(1) : '-'} L</Text>
                 </View>
 
                 {typeof rota.custoEstimado === 'number' && (
-                  <View style={styles.infoItem}>
-                    <Text style={styles.infoLabel}>Custo</Text>
-                    <Text style={styles.infoValue}>R$ {rota.custoEstimado.toFixed(2)}</Text>
+                  <View style={[styles.infoItem, { backgroundColor: colors.surface, borderLeftColor: colors.primary }]}>
+                    <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Custo</Text>
+                    <Text style={[styles.infoValue, { color: colors.text }]}>R$ {rota.custoEstimado.toFixed(2)}</Text>
                   </View>
                 )}
               </View>
@@ -475,6 +527,7 @@ const NavegacaoScreen: React.FC = () => {
                   style={styles.botaoResultado}
                   icon="content-save"
                   compact
+                  textColor={colors.primary}
                 >
                   Salvar Rota
                 </Button>
@@ -484,6 +537,7 @@ const NavegacaoScreen: React.FC = () => {
                   style={styles.botaoResultado}
                   icon="refresh"
                   compact
+                  textColor={colors.primary}
                 >
                   Nova Rota
                 </Button>
@@ -493,6 +547,7 @@ const NavegacaoScreen: React.FC = () => {
                   style={styles.botaoResultado}
                   icon="map"
                   compact
+                  textColor={colors.primary}
                 >
                   Recarregar Mapa
                 </Button>
@@ -502,6 +557,7 @@ const NavegacaoScreen: React.FC = () => {
                 style={{ marginTop: 16 }}
                 icon="chevron-up"
                 onPress={() => setMostrarResultado(false)}
+                textColor={colors.text}
               >
                 Buscar nova rota
               </Button>
@@ -511,9 +567,9 @@ const NavegacaoScreen: React.FC = () => {
       )}
 
       {carregando && (
-        <View style={styles.overlay}>
-          <ActivityIndicator size="large" color="#3B82F6" />
-          <Text style={styles.loadingText}>Calculando melhor rota...</Text>
+        <View style={[styles.overlay, { backgroundColor: 'rgba(0,0,0,0.45)' }]}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={[styles.loadingText, { color: colors.text }]}>Calculando melhor rota...</Text>
         </View>
       )}
     </View>
@@ -536,14 +592,13 @@ const styles = StyleSheet.create({
   },
   tituloBusca: {
     fontSize: 20,
-    fontWeight: 'bold',
     color: '#FF9B42',
     marginBottom: 12,
   },
   inputBusca: {
     width: '100%',
     marginBottom: 12,
-    backgroundColor: '#fff',
+    // backgroundColor definido dinamicamente via colors.surface
   },
   botaoBusca: {
     backgroundColor: '#FF9B42',

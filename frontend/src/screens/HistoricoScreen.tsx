@@ -7,6 +7,7 @@ import { View, StyleSheet, FlatList, Alert } from 'react-native';
 import { Text, Card, ActivityIndicator } from 'react-native-paper';
 import api from '../services/api';
 import { Veiculo } from '../types';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface HistoricoViagem {
   _id: string;
@@ -36,6 +37,7 @@ interface HistoricoViagem {
 }
 
 export default function HistoricoScreen() {
+  const { colors, toggleTheme } = useTheme();
   const [historico, setHistorico] = useState<HistoricoViagem[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [enderecos, setEnderecos] = useState<Record<string, { origem: string; destino: string }>>({});
@@ -140,24 +142,24 @@ export default function HistoricoScreen() {
       }
     }
     return (
-      <Card style={styles.card}>
+      <Card style={[styles.card, { backgroundColor: colors.card }]}>
         <Card.Content>
-          <Text style={styles.tituloCard}>📍 {origemEndereco} → {destinoEndereco}</Text>
-          <Text style={styles.info}>Veículo: {veiculoTexto}</Text>
-          <Text style={styles.info}>Distância: {distancia ? distancia.toFixed(1) : '-'} km</Text>
-          <Text style={styles.info}>Consumo: {item.consumoEstimado !== undefined ? item.consumoEstimado.toFixed(2) : '-'} L</Text>
-          {item.dataViagem && <Text style={styles.info}>Data: {formatarData(item.dataViagem)}</Text>}
+          <Text style={[styles.tituloCard, { color: colors.text }]}>📍 {origemEndereco} → {destinoEndereco}</Text>
+          <Text style={[styles.info, { color: colors.textSecondary }]}>Veículo: {veiculoTexto}</Text>
+          <Text style={[styles.info, { color: colors.textSecondary }]}>Distância: {distancia ? distancia.toFixed(1) : '-'} km</Text>
+          <Text style={[styles.info, { color: colors.textSecondary }]}>Consumo: {item.consumoEstimado !== undefined ? item.consumoEstimado.toFixed(2) : '-'} L</Text>
+          {item.dataViagem && <Text style={[styles.info, { color: colors.textSecondary }]}>Data: {formatarData(item.dataViagem)}</Text>}
         </Card.Content>
       </Card>
     );
   }, [enderecos, veiculosMap]);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}> 
       {carregando ? (
-        <ActivityIndicator size="large" style={{ marginTop: 32 }} />
+        <ActivityIndicator size="large" style={{ marginTop: 32 }} color={colors.primary} />
       ) : historico.length === 0 ? (
-        <Text style={styles.text}>Nenhuma viagem realizada ainda.</Text>
+        <Text style={[styles.text, { color: colors.text }]}>Nenhuma viagem realizada ainda.</Text>
       ) : (
         <FlatList
           data={historico}
@@ -180,6 +182,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
+    paddingTop:40,
   },
   card: {
     marginBottom: 16,
