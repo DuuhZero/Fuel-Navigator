@@ -1,0 +1,9 @@
+.vercel
+.env
+.env
+frontend/babel.config.js
+frontend/copy-apk.sh
+frontend/build-apk.sh
+babel.config.js
+copy-apk.sh
+build-apk.sh
