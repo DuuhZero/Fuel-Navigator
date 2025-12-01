@@ -47,8 +47,8 @@ O objetivo desse app é fornecer aos usuários informações precisas sobre o co
 | 6   |   1   |  Alta   |      8     | Como Usuário, quero que seja possível armazenar em um historico as rotas anteriormente buscadas, para que eu possa acompanhar de maneira acertiva.|  ✅      |
 | 7   |   2   |   Alta     |      3     | Como Usuário, quero que o sistema tenha a opção de salvar as rotas utilizadas, para facilitação de busca.|  ✅      |
 | 8    |  2   |    Média      |     5      | Como Usuário, quero que seja possível a geração de relatórios que informe o consumo e a distância percorrida ao longo do mês.|  ✅      |
-| 9    |   3   |    Média    |      8     | Como Usuário, quero o software possua uma interface simples e prática, para que eu possar navegar sem dificuldades.|        |
-| 10    |   3   |    Média     |    3       | Como Cliente, quero que o software possua autenticação para o login de usuários, para que possa haver maior segurança em relação a aplicação.|        |
+| 9    |   3   |    Média    |      8     | Como Usuário, quero o software possua uma interface simples e prática, para que eu possar navegar sem dificuldades.|    ✅  |
+| 10    |   3   |    Média     |    3       | Como Cliente, quero que o software possua autenticação para o login de usuários, para que possa haver maior segurança em relação a aplicação.|   ✅  |
 
 
 
