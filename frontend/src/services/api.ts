@@ -2,16 +2,15 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 
-// Pega o IP automaticamente da variável de ambiente
-const API_HOST = Constants.expoConfig?.extra?.apiHost || 'localhost';
+// URL fixa do backend na Vercel - funciona em qualquer WiFi/4G
+const API_BASE_URL = 'https://backend-fuelnav-avwo3xgmp-eduardo-da-silva-fontes-projects.vercel.app/api';
 
-const API_BASE_URL = `http://${API_HOST}:5000/api`;
-
-
+console.log('🌐 Backend na Vercel (cloud)');
+console.log('🚀 API Base URL:', API_BASE_URL);
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000,
+  timeout: 15000, // Aumentado para 15s por causa da latência da Vercel
 });
 
 api.interceptors.request.use(async (config) => {
